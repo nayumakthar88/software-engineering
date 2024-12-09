@@ -1,0 +1,68 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_NAME_LENGTH 100
+#define MAX_TIME_LENGTH 20
+typedef struct {
+    char patient_name[MAX_NAME_LENGTH];
+    char doctor_name[MAX_NAME_LENGTH];
+    char time[MAX_TIME_LENGTH];
+} Appointment;
+void save_appointment(const char *file_path, Appointment appointment) {
+    FILE *file = fopen(file_path, "w");
+    if (file == NULL) {
+        perror("Error opening file");
+        return;
+    }
+    fprintf(file, "%s,%s,%s\n", appointment.patient_name, appointment.doctor_name, appointment.time);
+    fclose(file);
+}
+Appointment* load_appointment(const char *file_path) {
+    FILE *file = fopen(file_path, "r");
+    static Appointment appointment; 
+    if (file == NULL) {
+        return NULL;
+    }
+    if (fgets(appointment.patient_name, sizeof(appointment.patient_name), file) != NULL) {
+        appointment.patient_name[strcspn(appointment.patient_name, "\n")] = 0;
+        fgets(appointment.doctor_name, sizeof(appointment.doctor_name), file);
+        appointment.doctor_name[strcspn(appointment.doctor_name, "\n")] = 0;
+        fgets(appointment.time, sizeof(appointment.time), file);
+        appointment.time[strcspn(appointment.time, "\n")] = 0;
+        fclose(file);
+        return &appointment;
+    }
+    fclose(file);
+    return NULL;
+}
+void display_appointment(Appointment appointment) {
+    printf("\nAppointment Details:\n");
+    printf("Patient: %s\n", appointment.patient_name);
+    printf("Doctor: %s\n", appointment.doctor_name);
+    printf("Time: %s\n", appointment.time);
+}
+int main() {
+    const char *file_path = "appointment.txt";
+    Appointment *appointment = load_appointment(file_path);
+
+    if (appointment != NULL) {
+        display_appointment(*appointment);
+    } else {
+        printf("No appointment found, let's create a new one.\n");
+        Appointment new_appointment;
+        printf("Enter patient's name: ");
+        fgets(new_appointment.patient_name, sizeof(new_appointment.patient_name), stdin);
+        new_appointment.patient_name[strcspn(new_appointment.patient_name, "\n")] = 0;
+        printf("Enter doctor's name: ");
+        fgets(new_appointment.doctor_name, sizeof(new_appointment.doctor_name), stdin);
+        new_appointment.doctor_name[strcspn(new_appointment.doctor_name, "\n")] = 0;
+        printf("Enter appointment time (e.g., 10:00 AM): ");
+        fgets(new_appointment.time, sizeof(new_appointment.time), stdin);
+        new_appointment.time[strcspn(new_appointment.time, "\n")] = 0;
+        save_appointment(file_path, new_appointment);
+        printf("\nAppointment saved successfully!\n");
+        display_appointment(new_appointment);
+    }
+    return 0;
+}
